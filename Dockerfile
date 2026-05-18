@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Prevents Python from buffering stdout and stderr
 ENV PYTHONUNBUFFERED=1
 # Default port for cloud providers
-ENV PORT=8080
+ENV PORT=7860
 
 # Set work directory
 WORKDIR /app
@@ -24,7 +24,7 @@ COPY . .
 RUN mkdir -p static/uploads && chmod 777 static/uploads
 
 # Expose the default port
-EXPOSE 8080
+EXPOSE 7860
 
 # Start Gunicorn WSGI server
 # NOTE: We use 1 worker and 4 threads to prevent TensorFlow from multiplying in memory,
