@@ -1,4 +1,7 @@
 numpy
 matplotlib
-tensorflow
+tensorflow-cpu
 keras
+Flask
+Pillow
+gunicorn

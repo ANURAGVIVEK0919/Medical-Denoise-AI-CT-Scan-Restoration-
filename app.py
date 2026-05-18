@@ -79,6 +79,8 @@ def process():
         return jsonify({'error': 'No image uploaded'}), 400
     
     file = request.files['image']
+    ref_file = request.files.get('reference') # Optional Reference
+    
     if file.filename == '':
         return jsonify({'error': 'No image selected'}), 400
     
@@ -87,6 +89,28 @@ def process():
     
     noisy, denoised, diff, metrics = process_image(filepath)
     
+    # If Reference (Full Dose) is provided, calculate TRUE improvement
+    true_metrics = None
+    if ref_file and ref_file.filename != '':
+        ref_path = os.path.join(app.config['UPLOAD_FOLDER'], 'ref_' + ref_file.filename)
+        ref_file.save(ref_path)
+        
+        # Load Reference
+        ref_img = load_img(ref_path, target_size=(256, 256), color_mode='grayscale')
+        ref_array = img_to_array(ref_img) / 255.0
+        
+        # Initial Quality (Noisy vs Ref)
+        init_psnr = tf.image.psnr(ref_array, noisy, max_val=1.0).numpy()
+        # Final Quality (Denoised vs Ref)
+        final_psnr = tf.image.psnr(ref_array, denoised, max_val=1.0).numpy()
+        
+        true_metrics = {
+            'initial_psnr': float(init_psnr),
+            'final_psnr': float(final_psnr),
+            'gain': float(final_psnr - init_psnr)
+        }
+        os.remove(ref_path)
+
     if noisy is None:
         return jsonify({'error': 'Model file not found. Please ensure medical_ct_denoiser_full.keras is present.'}), 500
 
@@ -97,7 +121,8 @@ def process():
         'noisy': array_to_base64(noisy),
         'denoised': array_to_base64(denoised),
         'diff': array_to_base64(diff),
-        'metrics': metrics
+        'metrics': metrics,
+        'true_metrics': true_metrics
     })
 
 if __name__ == '__main__':
