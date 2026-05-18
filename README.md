@@ -1,3 +1,13 @@
+---
+title: Medical CT Denoise AI
+emoji: 🩺
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_file: app.py
+pinned: false
+---
+
 # Description:
 
 DenoiseNet is a powerful image processing project that utilizes a convolutional autoencoder to effectively remove noise from images, enhancing their quality and visual appeal. This project focuses on training a deep learning model to reconstruct clean images from their noisy counterparts, demonstrating the practical applications of neural networks in computer vision.
