@@ -12,13 +12,6 @@ ENV PORT=8080
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies (required for image processing, OpenCV, and C-compilation)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy requirements.txt and install Python dependencies
 # Using --no-cache-dir to keep the image size minimal
 COPY requirements.txt .
