@@ -8,35 +8,138 @@ app_file: app.py
 pinned: false
 ---
 
-# Description:
+# Medical CT Denoise AI 🩺
 
-DenoiseNet is a powerful image processing project that utilizes a convolutional autoencoder to effectively remove noise from images, enhancing their quality and visual appeal. This project focuses on training a deep learning model to reconstruct clean images from their noisy counterparts, demonstrating the practical applications of neural networks in computer vision.
+[![TensorFlow 2.10+](https://img.shields.io/badge/TensorFlow-2.10+-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)](https://tensorflow.org)
+[![Flask](https://img.shields.io/badge/Flask-1.0+-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-# Key Components:
-Dataset Utilization:
+**Medical CT Denoise AI** is a state-of-the-art deep learning system powered by a **U-Net Convolutional Autoencoder** to reconstruct high-fidelity, clean CT images from low-dose, high-noise clinical scans. 
 
-The project uses the CIFAR-10 dataset, which consists of 60,000 32x32 color images in 10 different classes. This dataset is ideal for image denoising tasks due to its diverse range of images.
-Noising Mechanism:
+By utilizing deep learning to restore quarter-dose (low radiation) CT scans, this system addresses a critical challenge in modern radiology: **minimizing patient radiation exposure while maintaining high diagnostic clarity.**
 
-To simulate real-world scenarios, noise is artificially added to the images using a Gaussian noise model. This helps in training the autoencoder to learn the characteristics of both noisy and clean images.
-Model Architecture:
+---
 
-The core of DenoiseNet is built upon a convolutional autoencoder architecture. The model consists of:
-Encoder: Multiple convolutional layers followed by max pooling layers to extract features from the noisy images, reducing the spatial dimensions while retaining essential information.
-Decoder: Up-sampling and convolutional layers that reconstruct the original image from the compressed representation learned by the encoder.
-Training Process:
+## 📸 Interactive Web Dashboard
 
-The model is trained using the Mean Squared Error (MSE) loss function, which quantifies the difference between the predicted (denoised) images and the actual clean images. The Adam optimizer is employed to enhance the training efficiency.
-The model undergoes 50 epochs of training, allowing it to learn the intricacies of image denoising effectively.
-Results Visualization:
+The project includes a production-ready, beautiful Glassmorphism web interface where clinical professionals can upload low-dose scans, evaluate AI-driven restoration results in real-time, and download complete metric reports.
 
-The project visualizes the results by displaying the original noisy images, the denoised images produced by the autoencoder, and the corresponding clean images. This comparison showcases the effectiveness of the autoencoder in noise reduction.
+- **Real-Time Difference Map Generation**: Visually isolates and highlights exactly what noise/artifacts the AI removed, assuring clinical specialists that anatomical structures remain intact.
+- **Objective Metric Analytics**: Calculates **PSNR (Peak Signal-to-Noise Ratio)** and **SSIM (Structural Similarity Index)** on the fly.
+- **True Metrics Benchmarking**: If an optional reference (Full-Dose) image is uploaded, the platform computes absolute initial/final quality values and logs the **Net Clarity Gain (dB)**.
 
-# Applications:
+---
 
-DenoiseNet has significant applications in fields like photography, video processing, medical imaging, and any area where image quality is paramount. It can be used to enhance images captured in low-light conditions or those affected by various types of noise. Please note During preprocessing, CIFAR-10 images are often normalized, augmented, or scaled in such a way that fine details are lost. For instance:
-Normalization: Normalizing the pixel values to a range (e.g., between 0 and 1) may make images appear a bit less sharp when visualized.
-Augmentation: Random cropping or resizing can also reduce image clarity.(For better clarity one can use images from ImageNet or CIFAR 100) 
-Sample model output:
-![Sample output ](https://github.com/user-attachments/assets/b137edae-89a2-43a8-b157-15128137e92f)
+## 🛠️ System & Pipeline Architecture
 
+The core of the system is built on a custom symmetric **U-Net** architecture. Skip connections pass high-resolution details directly from the contracting path (Encoder) to the expansive path (Decoder), preserving fine clinical features like tissues and micro-lesions.
+
+```mermaid
+graph TD
+    A[Noisy Input CT: Quarter-Dose] --> B(Encoder Blocks: Conv + BatchNorm + MaxPool)
+    B --> C[Bottleneck: Compressed Representations]
+    C --> D(Decoder Blocks: UpSampling + Concatenate + Conv)
+    B -.->|Skip Connections: Preserve Fine Textures| D
+    D --> E[Denoised Output CT: Reconstructed Full-Dose]
+    
+    %% Dashboard Flow
+    E --> F[Web App Interface]
+    A --> F
+    F --> G{Optional Reference?}
+    G -->|Yes| H[Calculate True Metric Gain & Gain Badge]
+    G -->|No| I[Calculate Absolute PSNR/SSIM & Difference Map]
+```
+
+---
+
+## 🧠 Deep Learning Implementation Details
+
+### Model Architecture
+- **Input Dimensions**: 256x256x1 (Single channel grayscale CT scan).
+- **Encoder Path**: Multi-stage Convolutional layers (3x3 filters, ReLU) coupled with **Batch Normalization** to stabilize training dynamics, followed by Max Pooling (2x2) for spatial reduction.
+- **Decoder Path**: Up-sampling (2x2) followed by **feature map concatenation** with matching encoder layers (Skip Connections) to restore anatomical structure, concluded by a 1x1 Convolution with Sigmoid activation.
+- **Optimization Strategy**: Trained using **Mean Squared Error (MSE)** loss, minimizing structural deviation, optimized with the **Adam Optimizer**.
+
+### Optimized tf.data Input Pipeline
+To prevent CPU bottlenecking and system memory leaks when handling heavy medical datasets, training pipelines are built using the TensorFlow `tf.data` API:
+- **Parallel Processing**: Asynchronous mapping (`num_parallel_calls=tf.data.AUTOTUNE`).
+- **Memory Optimization**: Dynamic prefetching (`prefetch(buffer_size=tf.data.AUTOTUNE)`) overlapping image loading and GPU operations.
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Local Development Setup
+
+Ensure you have Python 3.10+ installed.
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/medical-ct-denoise-ai.git
+cd medical-ct-denoise-ai
+
+# Create and activate virtual environment
+python -m venv venv
+venv\Scripts\activate # On Linux: source venv/bin/activate
+
+# Install requirements
+pip install -r requirements.txt
+```
+
+### 2. Run the Web Application
+```bash
+python app.py
+```
+Open your browser and navigate to `http://127.0.0.1:5000`.
+
+---
+
+## 🐳 Docker Deployment (Production-Ready)
+
+To ensure consistent runtime environments across local setups and cloud instances (like Hugging Face Spaces), the system is fully containerized.
+
+```bash
+# Build the Docker image
+docker build -t medical-ct-denoise-ai .
+
+# Run the container
+docker run -p 7860:7860 medical-ct-denoise-ai
+```
+
+> [!NOTE]
+> **Production Scaling Safeguard**: The `Dockerfile` uses a multi-threaded **Gunicorn WSGI server** configured with strict worker limits (`--workers 1 --threads 4`). This safely controls TensorFlow's CPU threading, eliminating Out-Of-Memory (OOM) crashes common when scaling deep learning models on standard cloud instances.
+
+---
+
+## 🧪 Clinical Quality Evaluation Metrics
+
+The system measures the quality of the image reconstruction using two core standards in digital image processing:
+
+1. **Peak Signal-to-Noise Ratio (PSNR)**:
+   $$\text{PSNR} = 10 \cdot \log_{10}\left(\frac{\text{MAX}^2}{\text{MSE}}\right)$$
+   *A higher value indicates less noise. A **+3dB increase** represents a **50% reduction in noise power**.*
+
+2. **Structural Similarity Index (SSIM)**:
+   Measures luminance, contrast, and structure similarity against the reference scan, scaled between `0` (no similarity) and `1` (perfect reconstruction).
+
+---
+
+## 📂 Project Structure
+
+```text
+├── app.py                      # Flask Application Server & API endpoints
+├── train_medical_ct.py         # Standard local training script (U-Net & tf.data)
+├── kaggle_train_medical.py     # Training script optimized for Kaggle GPU environments
+├── Dockerfile                  # Lightweight Python containerization
+├── requirements.txt            # Python dependencies (TensorFlow-CPU, Flask, Pillow, etc.)
+├── templates/
+│   └── index.html              # Modern, responsive Glassmorphism dashboard UI
+└── static/
+    └── uploads/                # Temporary directory for processing uploaded scans
+```
+
+---
+
+## 📜 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

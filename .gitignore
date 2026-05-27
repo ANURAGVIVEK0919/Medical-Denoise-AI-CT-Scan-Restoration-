@@ -5,3 +5,7 @@ __pycache__/
 .vscode/
 .ipynb_checkpoints/
 venv/
+
+# Ignore local uploaded media
+static/uploads/*
+!static/uploads/.gitkeep
